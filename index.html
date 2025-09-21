@@ -1,3 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday My Love!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Countdown Page -->
+    <div id="countdown-page" class="container">
+        <div class="countdown-container">
+            <h1>🎉 Countdown to My Love's Special Day 🎉</h1>
+            
+            <div class="countdown-timer">
+                <div class="time-unit">
+                    <div class="time-value" id="days">00</div>
+                    <div class="time-label">Days</div>
+                </div>
+                <div class="time-unit">
+                    <div class="time-value" id="hours">00</div>
+                    <div class="time-label">Hours</div>
+                </div>
+                <div class="time-unit">
+                    <div class="time-value" id="minutes">00</div>
+                    <div class="time-label">Minutes</div>
+                </div>
+                <div class="time-unit">
+                    <div class="time-value" id="seconds">00</div>
+                    <div class="time-label">Seconds</div>
+                </div>
+            </div>
+            
+            <div class="photo-placeholder">
+                <img src="./images/Photoroom-20250104_193428.png" alt="My Love">
+            </div>
+            
+            <button id="surprise-btn" disabled>Open Your Surprise 💝</button>
+        </div>
+        
+        <!-- Floating elements -->
+        <div class="floating heart" style="top: 10%; left: 10%;">❤️</div>
+        <div class="floating heart" style="top: 20%; left: 85%;">❤️</div>
+        <div class="floating heart" style="top: 70%; left: 15%;">❤️</div>
+        <div class="floating flower" style="top: 80%; left: 80%;">🌸</div>
+        <div class="floating flower" style="top: 30%; left: 25%;">🌹</div>
+    </div>
+
+    <!-- Birthday Page -->
+    <div id="birthday-page" class="container">
+        <canvas id="confetti-canvas"></canvas>
+        
+        <div class="birthday-container">
+            <h2>Happy Birthday My Love! 🎂✨</h2>
+            
+            <div class="birthday-photo">
+                <img src="images/beautified_rounded_centered.png" alt="My Love">
+            </div>
+            
+            <div class="message-box">
+                Wishing you endless happiness, love, and smiles today & forever 💕
+            </div>
+            
+            <button id="back-btn">Forever With You Baby❤️</button>
+        </div>
+        
+        <div class="music-control" id="music-toggle">
+            <i class="fas fa-volume-up"></i>
+        </div>
+        
+        <!-- Floating elements -->
+        <div class="floating heart" style="top: 5%; left: 5%;">❤️</div>
+        <div class="floating heart" style="top: 15%; left: 90%;">❤️</div>
+        <div class="floating heart" style="top: 75%; left: 10%;">❤️</div>
+        <div class="floating heart" style="top: 85%; left: 75%;">❤️</div>
+        <div class="floating flower" style="top: 25%; left: 20%;">🌹</div>
+        <div class="floating flower" style="top: 65%; left: 85%;">🌸</div>
+        <div class="floating flower" style="top: 40%; left: 40%;">🌺</div>
+    </div>
+
+    <audio id="bg-music" loop>
+        <source src="./sound/happy-birthday.mp3" type="audio/mpeg">
+    </audio>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Elements
@@ -12,70 +98,70 @@
         const musicToggle = document.getElementById('music-toggle');
         const bgMusic = document.getElementById('bg-music');
         const confettiCanvas = document.getElementById('confetti-canvas');
+
         const ctx = confettiCanvas.getContext('2d');
 
-        // Target date (September 21st of current year)
+        // Target date (Sept 21st of current year at 00:00)
         const currentYear = new Date().getFullYear();
-        let targetDate = new Date(currentYear, 8, 21, 0, 0, 0); // Sept 21, 00:00
-        let birthdayEnd = new Date(currentYear, 8, 22, 0, 0, 0); // Sept 22, 00:00
-
-        // If today is already past Sept 22 → shift to next year
-        const today = new Date();
-        if (today >= birthdayEnd) {
+        let targetDate = new Date(currentYear, 8, 21, 0, 0, 0); 
+        if (new Date() > targetDate) {
             targetDate.setFullYear(currentYear + 1);
-            birthdayEnd.setFullYear(currentYear + 1);
         }
+
+        // Birthday end (24h window)
+        let birthdayEnd = new Date(targetDate.getTime() + (24 * 60 * 60 * 1000));
 
         // Countdown function
         function updateCountdown() {
             const now = new Date();
 
-            // If inside birthday window → enable button
             if (now >= targetDate && now < birthdayEnd) {
+                // Inside birthday window → enable button
+                surpriseBtn.disabled = false;
                 daysEl.textContent = "00";
                 hoursEl.textContent = "00";
                 minutesEl.textContent = "00";
                 secondsEl.textContent = "00";
-                surpriseBtn.disabled = false;
                 return;
-            }
-
-            // If after birthday window → reset to next year
-            if (now >= birthdayEnd) {
+            } else if (now >= birthdayEnd) {
+                // After birthday → reset next year
                 targetDate.setFullYear(targetDate.getFullYear() + 1);
-                birthdayEnd.setFullYear(birthdayEnd.getFullYear() + 1);
+                birthdayEnd = new Date(targetDate.getTime() + (24 * 60 * 60 * 1000));
                 surpriseBtn.disabled = true;
             }
 
-            // Countdown math
             const diff = targetDate - now;
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            // Update DOM
             daysEl.textContent = days.toString().padStart(2, '0');
             hoursEl.textContent = hours.toString().padStart(2, '0');
             minutesEl.textContent = minutes.toString().padStart(2, '0');
             secondsEl.textContent = seconds.toString().padStart(2, '0');
         }
 
-        // Initial + interval updates
         updateCountdown();
-        let countdownInterval = setInterval(updateCountdown, 1000);
+        const countdownInterval = setInterval(updateCountdown, 1000);
 
         // Show birthday page
         function showBirthdayPage() {
+            clearInterval(countdownInterval);
             countdownPage.style.display = 'none';
             birthdayPage.style.display = 'flex';
             startConfetti();
 
             bgMusic.volume = 0.5;
-            bgMusic.play().catch(() => console.log("Autoplay blocked"));
+            const playPromise = bgMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Autoplay prevented: ", error);
+                });
+            }
         }
 
-        // Button listeners
+        // Button event listeners
         surpriseBtn.addEventListener('click', showBirthdayPage);
 
         backBtn.addEventListener('click', function() {
@@ -86,6 +172,7 @@
             bgMusic.currentTime = 0;
             musicToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
             updateCountdown();
+            setInterval(updateCountdown, 1000);
         });
 
         // Music toggle
@@ -101,7 +188,7 @@
             }
         });
 
-        // Confetti animation
+        // Confetti functions
         let confettiInterval;
         const confettiPieces = [];
         const colors = ['#ff6b6b', '#ff8e8e', '#ffde7d', '#a3f7bf', '#74b9ff'];
@@ -109,8 +196,6 @@
         function initConfetti() {
             confettiCanvas.width = window.innerWidth;
             confettiCanvas.height = window.innerHeight;
-            confettiPieces.length = 0;
-
             for (let i = 0; i < 150; i++) {
                 confettiPieces.push({
                     x: Math.random() * confettiCanvas.width,
@@ -134,11 +219,9 @@
                 ctx.fillStyle = confetto.color;
                 ctx.fillRect(-confetto.size / 2, -confetto.size / 2, confetto.size, confetto.size);
                 ctx.restore();
-
                 confetto.y += confetto.speed;
                 confetto.x += Math.sin(confetto.angle * Math.PI / 180) * 2;
                 confetto.rotation += confetto.rotationSpeed;
-
                 if (confetto.y > confettiCanvas.height) {
                     confetto.y = -confetto.size;
                     confetto.x = Math.random() * confettiCanvas.width;
@@ -157,22 +240,26 @@
 
         // Easter egg
         let tapCount = 0;
-        document.querySelectorAll('.heart, .flower').forEach(el => {
-            el.addEventListener('click', function() {
+        document.querySelectorAll('.heart, .flower').forEach(element => {
+            element.addEventListener('click', function() {
                 tapCount++;
                 if (tapCount >= 3) {
                     alert('You found the secret! 💖 You are the most amazing person in my life!');
                     tapCount = 0;
                 }
-                setTimeout(() => tapCount = 0, 2000);
+                setTimeout(() => { tapCount = 0; }, 2000);
             });
         });
 
-        // Responsive confetti
-        window.addEventListener('resize', () => {
-            confettiCanvas.width = window.innerWidth;
-            confettiCanvas.height = window.innerHeight;
+        window.addEventListener('resize', function() {
+            if (confettiCanvas) {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            }
         });
     });
 </script>
+
+</body>
+</html>
 
