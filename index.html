@@ -85,207 +85,183 @@
     </audio>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elements
-            const countdownPage = document.getElementById('countdown-page');
-            const birthdayPage = document.getElementById('birthday-page');
-            const surpriseBtn = document.getElementById('surprise-btn');
-            const backBtn = document.getElementById('back-btn');
-            const daysEl = document.getElementById('days');
-            const hoursEl = document.getElementById('hours');
-            const minutesEl = document.getElementById('minutes');
-            const secondsEl = document.getElementById('seconds');
-            const musicToggle = document.getElementById('music-toggle');
-            const bgMusic = document.getElementById('bg-music');
-            const confettiCanvas = document.getElementById('confetti-canvas');
-            
-            // Set the context for the confetti canvas
-            const ctx = confettiCanvas.getContext('2d');
-            
-            // Target date (September 21st of current year)
-            const currentYear = new Date().getFullYear();
-            let targetDate = new Date(currentYear, 8, 21); // Month is 0-indexed (8 = September)
-            
-            // For testing - uncomment the next line to set the target date to 10 seconds from now
-            // targetDate = new Date(Date.now() + 10000);
-            
-            // Check if we're past September 21st this year
-            const today = new Date();
-            if (today > targetDate) {
-                // If so, set target to next year
-                targetDate.setFullYear(currentYear + 1);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const countdownPage = document.getElementById('countdown-page');
+        const birthdayPage = document.getElementById('birthday-page');
+        const surpriseBtn = document.getElementById('surprise-btn');
+        const backBtn = document.getElementById('back-btn');
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+        const musicToggle = document.getElementById('music-toggle');
+        const bgMusic = document.getElementById('bg-music');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const ctx = confettiCanvas.getContext('2d');
+
+        // Target date (September 21st of current year)
+        const currentYear = new Date().getFullYear();
+        let targetDate = new Date(currentYear, 8, 21, 0, 0, 0); // Sept 21, 00:00
+        let birthdayEnd = new Date(currentYear, 8, 22, 0, 0, 0); // Sept 22, 00:00
+
+        // If today is already past Sept 22 → shift to next year
+        const today = new Date();
+        if (today >= birthdayEnd) {
+            targetDate.setFullYear(currentYear + 1);
+            birthdayEnd.setFullYear(currentYear + 1);
+        }
+
+        // Countdown function
+        function updateCountdown() {
+            const now = new Date();
+
+            // If inside birthday window → enable button
+            if (now >= targetDate && now < birthdayEnd) {
+                daysEl.textContent = "00";
+                hoursEl.textContent = "00";
+                minutesEl.textContent = "00";
+                secondsEl.textContent = "00";
+                surpriseBtn.disabled = false;
+                return;
             }
-            
-            // Countdown function
-            function updateCountdown() {
-                const now = new Date();
-                const diff = targetDate - now;
-                
-                if (diff <= 0) {
-                    // Countdown is over - show birthday page
-                    showBirthdayPage();
-                    return;
-                }
-                
-                // Calculate time units
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                
-                // Update DOM
-                daysEl.textContent = days.toString().padStart(2, '0');
-                hoursEl.textContent = hours.toString().padStart(2, '0');
-                minutesEl.textContent = minutes.toString().padStart(2, '0');
-                secondsEl.textContent = seconds.toString().padStart(2, '0');
-                
-                // Enable button if countdown is over
-                if (diff <= 0) {
-                    surpriseBtn.disabled = false;
-                }
+
+            // If after birthday window → reset to next year
+            if (now >= birthdayEnd) {
+                targetDate.setFullYear(targetDate.getFullYear() + 1);
+                birthdayEnd.setFullYear(birthdayEnd.getFullYear() + 1);
+                surpriseBtn.disabled = true;
             }
-            
-            // Initial countdown update
+
+            // Countdown math
+            const diff = targetDate - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            // Update DOM
+            daysEl.textContent = days.toString().padStart(2, '0');
+            hoursEl.textContent = hours.toString().padStart(2, '0');
+            minutesEl.textContent = minutes.toString().padStart(2, '0');
+            secondsEl.textContent = seconds.toString().padStart(2, '0');
+        }
+
+        // Initial + interval updates
+        updateCountdown();
+        let countdownInterval = setInterval(updateCountdown, 1000);
+
+        // Show birthday page
+        function showBirthdayPage() {
+            countdownPage.style.display = 'none';
+            birthdayPage.style.display = 'flex';
+            startConfetti();
+
+            bgMusic.volume = 0.5;
+            bgMusic.play().catch(() => console.log("Autoplay blocked"));
+        }
+
+        // Button listeners
+        surpriseBtn.addEventListener('click', showBirthdayPage);
+
+        backBtn.addEventListener('click', function() {
+            birthdayPage.style.display = 'none';
+            countdownPage.style.display = 'flex';
+            stopConfetti();
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+            musicToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
             updateCountdown();
-            
-            // Update countdown every second
-            const countdownInterval = setInterval(updateCountdown, 1000);
-            
-            // Show birthday page
-            function showBirthdayPage() {
-                clearInterval(countdownInterval);
-                countdownPage.style.display = 'none';
-                birthdayPage.style.display = 'flex';
-                startConfetti();
-                
-                // Try to play music (with user interaction)
+        });
+
+        // Music toggle
+        let isMuted = false;
+        musicToggle.addEventListener('click', function() {
+            isMuted = !isMuted;
+            if (isMuted) {
+                bgMusic.volume = 0;
+                musicToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
                 bgMusic.volume = 0.5;
-                const playPromise = bgMusic.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log("Autoplay prevented: ", error);
-                    });
-                }
-            }
-            
-            // Button event listeners
-            surpriseBtn.addEventListener('click', showBirthdayPage);
-            
-            backBtn.addEventListener('click', function() {
-                birthdayPage.style.display = 'none';
-                countdownPage.style.display = 'flex';
-                stopConfetti();
-                bgMusic.pause();
-                bgMusic.currentTime = 0;
-                
-                // Reset music icon
                 musicToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-                
-                // Restart countdown
-                updateCountdown();
-                setInterval(updateCountdown, 1000);
-            });
-            
-            // Music toggle
-            let isMuted = false;
-            musicToggle.addEventListener('click', function() {
-                isMuted = !isMuted;
-                
-                if (isMuted) {
-                    bgMusic.volume = 0;
-                    musicToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                } else {
-                    bgMusic.volume = 0.5;
-                    musicToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-                }
-            });
-            
-            // Confetti animation
-            let confettiInterval;
-            const confettiPieces = [];
-            const colors = ['#ff6b6b', '#ff8e8e', '#ffde7d', '#a3f7bf', '#74b9ff'];
-            
-            function initConfetti() {
-                confettiCanvas.width = window.innerWidth;
-                confettiCanvas.height = window.innerHeight;
-                
-                // Create confetti pieces
-                for (let i = 0; i < 150; i++) {
-                    confettiPieces.push({
-                        x: Math.random() * confettiCanvas.width,
-                        y: -Math.random() * confettiCanvas.height,
-                        size: Math.random() * 10 + 5,
-                        color: colors[Math.floor(Math.random() * colors.length)],
-                        speed: Math.random() * 3 + 2,
-                        angle: Math.random() * 360,
-                        rotation: Math.random() * 360,
-                        rotationSpeed: Math.random() * 5 - 2.5
-                    });
-                }
             }
-            
-            function drawConfetti() {
-                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-                
-                confettiPieces.forEach(confetto => {
-                    ctx.save();
-                    ctx.translate(confetto.x, confetto.y);
-                    ctx.rotate(confetto.rotation * Math.PI / 180);
-                    
-                    ctx.fillStyle = confetto.color;
-                    ctx.fillRect(-confetto.size / 2, -confetto.size / 2, confetto.size, confetto.size);
-                    
-                    ctx.restore();
-                    
-                    // Update position
-                    confetto.y += confetto.speed;
-                    confetto.x += Math.sin(confetto.angle * Math.PI / 180) * 2;
-                    confetto.rotation += confetto.rotationSpeed;
-                    
-                    // Reset if out of screen
-                    if (confetto.y > confettiCanvas.height) {
-                        confetto.y = -confetto.size;
-                        confetto.x = Math.random() * confettiCanvas.width;
-                    }
+        });
+
+        // Confetti animation
+        let confettiInterval;
+        const confettiPieces = [];
+        const colors = ['#ff6b6b', '#ff8e8e', '#ffde7d', '#a3f7bf', '#74b9ff'];
+
+        function initConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            confettiPieces.length = 0;
+
+            for (let i = 0; i < 150; i++) {
+                confettiPieces.push({
+                    x: Math.random() * confettiCanvas.width,
+                    y: -Math.random() * confettiCanvas.height,
+                    size: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 3 + 2,
+                    angle: Math.random() * 360,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 5 - 2.5
                 });
             }
-            
-            function startConfetti() {
-                initConfetti();
-                confettiInterval = setInterval(drawConfetti, 30);
-            }
-            
-            function stopConfetti() {
-                clearInterval(confettiInterval);
-            }
-            
-            // Easter egg - tap heart 3 times
-            let tapCount = 0;
-            document.querySelectorAll('.heart, .flower').forEach(element => {
-                element.addEventListener('click', function() {
-                    tapCount++;
-                    
-                    if (tapCount >= 3) {
-                        alert('You found the secret! 💖 You are the most amazing person in my life!');
-                        tapCount = 0;
-                    }
-                    
-                    // Reset tap count after 2 seconds
-                    setTimeout(() => {
-                        tapCount = 0;
-                    }, 2000);
-                });
-            });
-            
-            // Responsive confetti canvas
-            window.addEventListener('resize', function() {
-                if (confettiCanvas) {
-                    confettiCanvas.width = window.innerWidth;
-                    confettiCanvas.height = window.innerHeight;
+        }
+
+        function drawConfetti() {
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            confettiPieces.forEach(confetto => {
+                ctx.save();
+                ctx.translate(confetto.x, confetto.y);
+                ctx.rotate(confetto.rotation * Math.PI / 180);
+                ctx.fillStyle = confetto.color;
+                ctx.fillRect(-confetto.size / 2, -confetto.size / 2, confetto.size, confetto.size);
+                ctx.restore();
+
+                confetto.y += confetto.speed;
+                confetto.x += Math.sin(confetto.angle * Math.PI / 180) * 2;
+                confetto.rotation += confetto.rotationSpeed;
+
+                if (confetto.y > confettiCanvas.height) {
+                    confetto.y = -confetto.size;
+                    confetto.x = Math.random() * confettiCanvas.width;
                 }
+            });
+        }
+
+        function startConfetti() {
+            initConfetti();
+            confettiInterval = setInterval(drawConfetti, 30);
+        }
+
+        function stopConfetti() {
+            clearInterval(confettiInterval);
+        }
+
+        // Easter egg
+        let tapCount = 0;
+        document.querySelectorAll('.heart, .flower').forEach(el => {
+            el.addEventListener('click', function() {
+                tapCount++;
+                if (tapCount >= 3) {
+                    alert('You found the secret! 💖 You are the most amazing person in my life!');
+                    tapCount = 0;
+                }
+                setTimeout(() => tapCount = 0, 2000);
             });
         });
-    </script>
+
+        // Responsive confetti
+        window.addEventListener('resize', () => {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        });
+    });
+</script>
+
 </body>
+
 </html>
